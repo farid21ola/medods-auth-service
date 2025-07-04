@@ -55,7 +55,7 @@ MIGRATION_LEVEL=1
 ### 2. Запустите сервисы через Docker Compose
 
 ```sh
-docker-compose up -d
+docker-compose -f docker-compose.yml up -d
 ```
 
 - Сервис будет доступен на порту, указанном в `SERVER_PORT` (по умолчанию 8081).
