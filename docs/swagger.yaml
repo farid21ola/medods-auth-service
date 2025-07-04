@@ -1,0 +1,151 @@
+basePath: /api
+definitions:
+  handler.MeResponse:
+    properties:
+      guid:
+        type: string
+    type: object
+  handler.RefreshTokensRequest:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  handler.Response:
+    properties:
+      data: {}
+      msg:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.TokenPair:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: Сервис аутентификации пользователей для Medods.
+  title: Medods Auth Service API
+  version: "1.0"
+paths:
+  /logout:
+    post:
+      description: Инвалидирует access токен пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный выход
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "401":
+          description: Отсутствует или неверный access токен
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.Response'
+      security:
+      - BearerAuth: []
+      summary: Выход пользователя
+      tags:
+      - auth
+  /me:
+    get:
+      description: Возвращает GUID текущего пользователя по access токену
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MeResponse'
+        "401":
+          description: Отсутствует или неверный access токен
+          schema:
+            $ref: '#/definitions/handler.Response'
+      security:
+      - BearerAuth: []
+      summary: Получить информацию о себе
+      tags:
+      - auth
+  /tokens/{guid}:
+    post:
+      description: Генерирует пару токенов по guid пользователя
+      parameters:
+      - description: GUID пользователя
+        in: path
+        name: guid
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TokenPair'
+        "400":
+          description: guid не передан или неверный формат
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.Response'
+      summary: Генерация access и refresh токенов
+      tags:
+      - auth
+  /tokens/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет пару токенов по refresh токену
+      parameters:
+      - description: Тело запроса
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RefreshTokensRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TokenPair'
+        "400":
+          description: Некорректное тело запроса
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "401":
+          description: Неверный access или refresh токен
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.Response'
+      summary: Обновление access и refresh токенов
+      tags:
+      - auth
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

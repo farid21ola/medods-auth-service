@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  auth-service:
+    build: ./
+    command: ["dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./auth-service"]
+    restart: on-failure
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      SERVER_PORT: ${SERVER_PORT}
+      TIMEOUT: ${TIMEOUT}
+      IDLE_TIMEOUT: ${IDLE_TIMEOUT}
+      JWT_SECRET: ${JWT_SECRET}
+      ACCESS_TTL: ${ACCESS_TTL}
+      REFRESH_TTL: ${REFRESH_TTL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      USER_AGENT: ${USER_AGENT}
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    depends_on:
+      - db
+      - migrate
+    networks:
+      - auth_network
+
+  db:
+    image: postgres:17
+    restart: always
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./.database/postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+    networks:
+      - auth_network
+
+  migrate:
+    image: migrate/migrate
+    restart: on-failure
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable",
+        "goto", "${MIGRATION_LEVEL}"
+      ]
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+      - db
+    networks:
+      - auth_network
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      MIGRATION_LEVEL: ${MIGRATION_LEVEL}
+
+networks:
+  auth_network:
